@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>maxforfun 电商运营工作台</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F1F4FB;
+  --text-hi:#0F172A; --text-mid:#475569; --text-lo:#64748B;
+  --success:#10B981; --success-text:#059669;
+  --danger:#EF4444; --danger-text:#DC2626;
+  --warning:#F59E0B; --warning-text:#D97706;
+  --info:#3B82F6;
+  --grad:linear-gradient(135deg,#7C6EF7,#4F8DF7);
+  --grad-glow:0 5px 18px rgba(99,102,241,.32);
+  --card-border:rgba(148,163,184,.22);
+  color-scheme:light;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--text-hi);min-height:100vh}
+.tabnum,.kpi-value,.cum-value,.cal-amt,.rec-date,.day-num,td.num{font-variant-numeric:tabular-nums}
+
+.aurora{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.aurora-1{width:55vw;height:55vw;left:-15vw;top:-20vw;background:rgba(124,110,247,.14)}
+.aurora-2{width:45vw;height:45vw;right:-12vw;top:-12vw;background:rgba(34,211,238,.12)}
+.aurora-3{width:60vw;height:40vw;left:20vw;bottom:-22vw;background:rgba(79,141,247,.12)}
+
+.glass{background:rgba(255,255,255,.72);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);border:1px solid var(--card-border);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 8px 28px rgba(15,23,42,.07)}
+.glass-hover{transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+.glass-hover:hover{transform:translateY(-2px);border-color:rgba(124,110,247,.38)}
+
+header{position:sticky;top:0;z-index:50;background:rgba(241,244,251,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+header::before{content:"";display:block;height:2px;background:linear-gradient(90deg,#7C6EF7,#22D3EE)}
+.header-inner{max-width:1440px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:38px;height:38px;border-radius:11px;background:var(--grad);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--grad-glow)}
+.brand h1{font-size:16.5px;font-weight:700;letter-spacing:.3px}
+.brand-sub{font-size:11.5px;color:var(--text-lo);margin-top:1px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--card-border)}
+.badge .dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px rgba(16,185,129,.7)}
+.badge.memory .dot{background:var(--warning);box-shadow:0 0 8px rgba(245,158,11,.7)}
+
+.layout{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:20px 24px 48px;display:grid;grid-template-columns:168px 1fr;gap:18px;align-items:start}
+
+/* ---------- 窄侧边栏 ---------- */
+.sidebar{padding:12px 8px;position:sticky;top:80px}
+.nav-item{width:100%;display:flex;align-items:center;gap:8px;padding:9px 11px;border:none;border-radius:11px;background:transparent;color:var(--text-mid);font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s ease;position:relative;font-family:inherit}
+.nav-item:hover:not(.disabled):not(.active){background:rgba(124,110,247,.08);color:var(--text-hi)}
+.nav-item.active{background:var(--grad);color:#fff;box-shadow:var(--grad-glow)}
+.nav-item.disabled{opacity:.45;cursor:not-allowed;font-weight:500}
+.nav-icon{font-size:14px;width:17px;text-align:center}
+.nav-badge{margin-left:auto;font-size:10.5px;background:rgba(124,110,247,.14);color:#6D5BD0;padding:1px 7px;border-radius:999px}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.25);color:#fff}
+.nav-divider{height:1px;background:rgba(148,163,184,.25);margin:9px 6px}
+.nav-soon-label{font-size:10px;color:var(--text-lo);padding:2px 11px 5px;letter-spacing:1px}
+.soon-tag{margin-left:auto;font-size:9.5px;color:var(--text-lo);border:1px solid rgba(148,163,184,.4);padding:0 5px;border-radius:999px}
+.sidebar-foot{margin-top:12px;padding:8px 11px;font-size:10px;color:var(--text-lo);line-height:1.65;border-top:1px dashed rgba(148,163,184,.3)}
+
+main{min-width:0}
+.section-title{font-size:15px;font-weight:700;color:var(--text-hi);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section-title .st-sub{font-size:12px;font-weight:400;color:var(--text-lo)}
+.card{padding:16px 18px}
+button{font-family:inherit}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:1px solid var(--card-border);background:rgba(255,255,255,.8);color:var(--text-mid);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s ease;text-decoration:none}
+.btn:hover{border-color:rgba(124,110,247,.5);color:#6D5BD0}
+.btn-primary{background:var(--grad);border:none;color:#fff;box-shadow:var(--grad-glow)}
+.btn-primary:hover{color:#fff;filter:brightness(1.06)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.icon-btn{width:30px;height:30px;border-radius:9px;border:1px solid var(--card-border);background:rgba(255,255,255,.8);cursor:pointer;font-size:13px;color:var(--text-mid);display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+.icon-btn:hover:not(:disabled){border-color:rgba(124,110,247,.5);color:#6D5BD0}
+
+/* ---------- 日报 ---------- */
+.report-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.date-display{font-size:19px;font-weight:800;letter-spacing:.5px;min-width:180px;text-align:center}
+.date-display .wd{font-size:12.5px;color:var(--text-lo);font-weight:500;margin-left:6px}
+.date-pick{cursor:pointer;border-radius:10px;transition:background .2s;user-select:none}
+.date-pick:hover{background:rgba(124,110,247,.10)}
+.date-pick .caret{font-size:10px;color:var(--text-lo);margin-left:7px;vertical-align:2px}
+.date-picker{position:fixed;z-index:120;width:268px;padding:12px 12px 10px}
+.dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dp-title{font-weight:700;font-size:13.5px;letter-spacing:.3px}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dp-wd{font-size:10.5px;color:var(--text-lo);text-align:center;padding:2px 0}
+.dp-day{height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:background .15s}
+.dp-day:hover{background:rgba(124,110,247,.12);color:#6D5BD0}
+.dp-day.off{color:var(--text-lo);opacity:.3;cursor:default}
+.dp-day.off:hover{background:none;color:var(--text-lo)}
+.dp-day.blank{pointer-events:none}
+.dp-day.sel{background:var(--grad);color:#fff;box-shadow:var(--grad-glow)}
+.dp-note{margin-top:9px;font-size:10.5px;color:var(--text-lo);text-align:center}
+.prod-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.prod-row{padding:9px 2px;border-bottom:1px dashed var(--card-border)}
+.prod-row:last-child{border-bottom:none}
+.prod-title{font-size:12px;font-weight:600;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.prod-nums{display:flex;gap:10px;font-size:11px;color:var(--text-lo);flex-wrap:wrap}
+.prod-nums .bad{color:var(--danger-text);font-weight:700}
+@media (max-width:900px){.prod-cols{grid-template-columns:1fr}}
+.rev-cat{display:flex;align-items:center;gap:12px;padding:8px 2px}
+.rev-cat-rank{font-size:10px;font-weight:800;color:#8B7CF6;flex:none;width:18px;font-variant-numeric:tabular-nums}
+.rev-cat-k{width:64px;font-size:12px;font-weight:600;color:var(--text-hi);flex:none}
+.rev-cat-bar{flex:1;height:10px;border-radius:99px;background:rgba(148,163,184,.12);overflow:hidden}
+.rev-cat-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#7C6EF7,#4F8DF7,#22D3EE);box-shadow:0 0 10px rgba(124,110,247,.5);position:relative;overflow:hidden;animation:barIn .9s cubic-bezier(.16,1,.3,1) both}
+.rev-cat-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-100%);animation:shimmer 2.8s ease-in-out infinite}
+@keyframes barIn{from{width:0}}
+@keyframes shimmer{0%{transform:translateX(-100%)}55%,100%{transform:translateX(100%)}}
+.rev-cat-n{width:86px;text-align:right;font-size:11px;color:var(--text-lo);flex:none;font-variant-numeric:tabular-nums}
+.rev-cat-n b{color:var(--text-hi);font-size:12.5px}
+.week-table{width:100%;max-width:560px;border-collapse:separate;border-spacing:0;font-size:12.5px;border:1px solid rgba(148,163,184,.4);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.05)}
+.week-table th,.week-table td{padding:7px 14px;border-bottom:1px solid rgba(148,163,184,.22);text-align:left;background:rgba(255,255,255,.6)}
+.week-table th{background:rgba(124,110,247,.09);font-size:11.5px;font-weight:700;color:var(--text-mid);border-bottom:1px solid rgba(148,163,184,.4)}
+.week-table td.num,.week-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.week-table td.num{font-weight:700;color:var(--text-hi)}
+.week-table tr:nth-child(even) td{background:rgba(241,244,251,.7)}
+.week-table tr:last-child td{border-bottom:none}
+.prod-thumb{width:36px;height:36px;border-radius:9px;object-fit:cover;flex:none;background:#fff;border:1px solid rgba(148,163,184,.25)}
+.prod-row.has-img{display:flex;gap:10px;align-items:center}
+.prod-row.has-img .prod-main{flex:1;min-width:0}
+.alert-carousel{display:flex;align-items:center;gap:12px;min-height:34px}
+.alert-carousel .alert-chip{margin-bottom:0}
+.alert-chip.slide{animation:alertIn .45s cubic-bezier(.16,1,.3,1)}
+@keyframes alertIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.alert-dots{display:flex;gap:6px;flex:none;align-items:center}
+.alert-dot{width:7px;height:7px;border-radius:50%;background:rgba(148,163,184,.5);cursor:pointer;border:none;padding:0;transition:all .25s ease}
+.alert-dot.on{background:linear-gradient(135deg,#7C6EF7,#4F8DF7);width:18px;border-radius:99px}
+.alert-idx{font-size:11px;color:var(--text-lo);flex:none;font-variant-numeric:tabular-nums}
+.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.alerts{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px}
+.alert-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid var(--card-border);color:var(--text-mid)}
+.alert-chip.red{border-color:rgba(239,68,68,.35);color:var(--danger-text);background:rgba(239,68,68,.06)}
+.alert-chip.yellow{border-color:rgba(245,158,11,.4);color:var(--warning-text);background:rgba(245,158,11,.07)}
+.alert-chip.green{border-color:rgba(16,185,129,.35);color:var(--success-text);background:rgba(16,185,129,.06)}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:11px}
+.kpi-card{padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.kpi-top{display:flex;align-items:center;gap:8px}
+.kpi-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.kpi-label{font-size:11.5px;color:var(--text-lo);line-height:1.3}
+.kpi-value{font-size:19px;font-weight:800;letter-spacing:-.3px;white-space:nowrap}
+.kpi-delta{font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.kpi-delta.up{color:var(--success-text)}
+.kpi-delta.down{color:var(--danger-text)}
+.kpi-delta.flat{color:var(--text-lo)}
+.cum-band{display:grid;grid-template-columns:repeat(8,1fr);gap:11px;margin:14px 0}
+.cum-card{padding:11px 13px;min-width:0}
+.cum-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px;box-shadow:0 0 6px currentColor}
+.cum-label{font-size:11px;color:var(--text-lo);display:flex;align-items:center}
+.cum-value{font-size:15px;font-weight:800;margin-top:4px;white-space:nowrap}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:14px}
+.chart-card{padding:14px 16px}
+.chart-title{font-size:12.5px;font-weight:700;color:var(--text-mid);margin-bottom:9px}
+.chart-box{position:relative;height:210px}
+
+/* ---------- 投放分析 ---------- */
+.ad-cols{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+.ad-col{padding:14px 16px}
+.ad-col-title{font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ad-col-title .tag{font-size:10px;font-weight:700;color:#fff;background:var(--grad);padding:2px 8px;border-radius:999px}
+.ad-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.ad-metric{background:rgba(241,244,251,.8);border:1px solid rgba(148,163,184,.16);border-radius:10px;padding:9px 11px;min-width:0}
+.ad-metric .l{font-size:10.5px;color:var(--text-lo)}
+.ad-metric .v{font-size:15px;font-weight:800;margin-top:3px;white-space:nowrap}
+.ad-metric .s{font-size:10px;color:var(--text-lo);margin-top:2px}
+.diag-card{padding:16px 18px;margin-bottom:13px}
+.diag-block{margin-bottom:12px}
+.diag-block:last-child{margin-bottom:0}
+.diag-h{font-size:13px;font-weight:800;margin-bottom:8px}
+.diag-item{display:flex;gap:9px;align-items:flex-start;padding:8px 12px;border-radius:10px;background:rgba(241,244,251,.75);border:1px solid rgba(148,163,184,.14);margin-bottom:7px;font-size:12.5px;line-height:1.6;color:var(--text-mid)}
+.diag-item .flag{flex:none;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;margin-top:2px}
+.flag.red{background:rgba(239,68,68,.12);color:var(--danger-text)}
+.flag.yellow{background:rgba(245,158,11,.14);color:var(--warning-text)}
+.flag.blue{background:rgba(59,130,246,.12);color:#1D4ED8}
+.flag.green{background:rgba(16,185,129,.12);color:var(--success-text)}
+.pri{font-size:10.5px;font-weight:800;color:#fff;border-radius:6px;padding:1px 7px;margin-right:7px;flex:none}
+.pri.p1{background:#EF4444}.pri.p2{background:#F59E0B}.pri.p3{background:#94A3B8}
+.plan-table-wrap{overflow-x:auto}
+table.plan-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+.plan-table th{font-size:11px;color:var(--text-lo);font-weight:600;text-align:left;padding:7px 9px;border-bottom:1px solid rgba(148,163,184,.25)}
+.plan-table td{padding:8px 9px;border-bottom:1px solid rgba(148,163,184,.12);color:var(--text-mid)}
+.plan-table td.num{text-align:right;font-weight:600;color:var(--text-hi)}
+.plan-table tr:hover td{background:rgba(124,110,247,.05)}
+.plan-name{max-width:220px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--text-hi)}
+.health-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:5px}
+
+/* ---------- 日历 ---------- */
+.cal-wrap{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+.cal-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.cal-title{font-size:17px;font-weight:800;min-width:120px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.cal-wd{text-align:center;font-size:11.5px;color:var(--text-lo);padding:3px 0;font-weight:600}
+.cal-cell{min-height:86px;border-radius:11px;padding:7px 8px;cursor:pointer;position:relative;background:rgba(255,255,255,.55);border:1px solid rgba(148,163,184,.16);transition:all .18s ease;display:flex;flex-direction:column;gap:3px}
+.cal-cell:hover{border-color:rgba(124,110,247,.45);transform:translateY(-1px)}
+.cal-cell.blank{background:transparent;border:none;cursor:default}
+.cal-cell.blank:hover{transform:none}
+.cal-cell.today{box-shadow:0 0 0 2px rgba(34,211,238,.55)}
+.cal-cell.selected{background:linear-gradient(135deg,rgba(124,110,247,.14),rgba(79,141,247,.14));border-color:rgba(124,110,247,.6);box-shadow:0 4px 14px rgba(99,102,241,.18)}
+.day-num{font-size:12.5px;font-weight:700}
+.cal-cell.future .day-num{color:var(--text-lo)}
+.cal-amt{font-size:11.5px;font-weight:700;color:#4F46E5}
+.cal-cell.no-data .cal-amt{color:var(--text-lo);font-weight:400;font-size:10.5px}
+.cal-marks{display:flex;gap:5px;align-items:center;margin-top:auto}
+.mark-record{width:8px;height:8px;border-radius:50%;background:var(--grad);box-shadow:0 0 6px rgba(124,110,247,.6)}
+.mark-data{width:6px;height:6px;border-radius:50%;background:#22D3EE}
+.rec-count-tag{font-size:9.5px;color:#6D5BD0;font-weight:700}
+.cal-detail{padding:16px}
+.cal-detail-date{font-size:15px;font-weight:800;margin-bottom:10px}
+.mini-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.mini-kpi{background:rgba(241,244,251,.8);border:1px solid rgba(148,163,184,.18);border-radius:10px;padding:8px 10px}
+.mini-kpi .l{font-size:10.5px;color:var(--text-lo)}
+.mini-kpi .v{font-size:13.5px;font-weight:800;margin-top:2px}
+.effect-card{background:rgba(124,110,247,.06);border:1px solid rgba(124,110,247,.25);border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.effect-title{font-size:12px;font-weight:800;color:#5B4ED0;margin-bottom:8px}
+.effect-row{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;font-size:11.5px;padding:4px 0;color:var(--text-mid)}
+.effect-row .num{font-weight:700;color:var(--text-hi)}
+.effect-note{font-size:10.5px;color:var(--text-lo);margin-top:6px}
+.cal-rec-list{display:flex;flex-direction:column;gap:7px;margin:9px 0 11px;max-height:180px;overflow-y:auto}
+.cal-empty{font-size:12px;color:var(--text-lo);padding:8px 0}
+.quick-add{display:flex;flex-direction:column;gap:7px}
+select,input[type=date],input[type=text],textarea{font-family:inherit;font-size:12.5px;color:var(--text-hi);border:1px solid var(--card-border);border-radius:9px;padding:7px 9px;background:rgba(255,255,255,.9);outline:none;transition:border-color .2s}
+select:focus,input:focus,textarea:focus{border-color:rgba(124,110,247,.6)}
+textarea{resize:vertical;min-height:54px}
+
+/* ---------- 记录 ---------- */
+.rec-form{display:grid;grid-template-columns:150px 130px 1fr auto;gap:10px;align-items:start;margin-bottom:16px}
+.rec-form textarea{width:100%}
+.rec-group{margin-bottom:16px}
+.rec-group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;padding-left:4px;flex-wrap:wrap}
+.rec-date{font-size:13.5px;font-weight:800}
+.rec-group-sub{font-size:11.5px;color:var(--text-lo)}
+.rec-card{padding:11px 15px;margin-bottom:7px;display:flex;gap:11px;align-items:flex-start}
+.cat-chip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;flex:none;margin-top:2px}
+.cat-推广调整{background:rgba(124,110,247,.13);color:#5B4ED0}
+.cat-商品优化{background:rgba(16,185,129,.13);color:#047857}
+.cat-活动营销{background:rgba(245,158,11,.15);color:#B45309}
+.cat-评价客服{background:rgba(59,130,246,.13);color:#1D4ED8}
+.cat-其他{background:rgba(100,116,139,.14);color:#475569}
+.rec-body{flex:1;min-width:0}
+.rec-content{font-size:13px;line-height:1.6;color:var(--text-hi);word-break:break-word}
+.rec-time{font-size:10.5px;color:var(--text-lo);margin-top:3px}
+.rec-actions{display:flex;gap:6px;flex:none}
+.rec-actions .icon-btn{width:26px;height:26px;font-size:11px}
+.rec-edit-area{display:flex;flex-direction:column;gap:7px}
+.rec-edit-area textarea{width:100%}
+.rec-edit-row{display:flex;gap:8px;align-items:center}
+
+/* ---------- 情报 ---------- */
+.news-wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;align-items:start}
+.intel-card{padding:16px 18px;margin-bottom:14px}
+.intel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.intel-date{font-size:14px;font-weight:800}
+.intel-upd{font-size:11px;color:var(--text-lo)}
+.intel-sec{font-size:12.5px;font-weight:800;margin:12px 0 8px;display:flex;align-items:center;gap:7px}
+.intel-item{padding:10px 13px;border-radius:11px;background:rgba(241,244,251,.75);border:1px solid rgba(148,163,184,.14);margin-bottom:8px}
+.intel-item summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-hi);line-height:1.5;list-style:none;display:flex;gap:8px;align-items:baseline}
+.intel-item summary::-webkit-details-marker{display:none}
+.intel-item summary .idx{flex:none;font-size:10.5px;font-weight:800;color:#fff;background:var(--grad);border-radius:6px;padding:1px 7px}
+.intel-item .body{font-size:12px;color:var(--text-mid);line-height:1.7;margin-top:7px}
+.intel-item.plain summary{cursor:default}
+.tip-card{background:linear-gradient(135deg,rgba(124,110,247,.1),rgba(34,211,238,.1));border:1px solid rgba(124,110,247,.3);border-radius:12px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:var(--text-mid)}
+.news-col{padding:14px 16px}
+.news-col-title{font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.news-col-title .src{font-size:10px;color:var(--text-lo);font-weight:500}
+.news-item{display:block;padding:8px 4px;border-bottom:1px solid rgba(148,163,184,.14);text-decoration:none;color:var(--text-hi);font-size:12.5px;line-height:1.55;transition:color .15s}
+.news-item:hover{color:#5B4ED0}
+.news-item .meta{display:flex;gap:8px;align-items:center;margin-top:3px;font-size:10.5px;color:var(--text-lo)}
+.src-chip{font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:rgba(59,130,246,.1);color:#1D4ED8}
+.src-chip.ai{background:rgba(124,110,247,.12);color:#5B4ED0}
+.news-empty{font-size:12px;color:var(--text-lo);padding:14px 0;text-align:center}
+
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);z-index:99;background:rgba(15,23,42,.92);color:#fff;font-size:13px;padding:10px 22px;border-radius:999px;opacity:0;pointer-events:none;transition:all .3s ease;backdrop-filter:blur(8px)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+main > section > *{animation:rise .6s cubic-bezier(.16,1,.3,1) both}
+main > section > *:nth-child(2){animation-delay:.05s}
+main > section > *:nth-child(3){animation-delay:.1s}
+main > section > *:nth-child(4){animation-delay:.15s}
+main > section > *:nth-child(5){animation-delay:.2s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+
+@media (max-width:1180px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr)}
+  .cum-band{grid-template-columns:repeat(4,1fr)}
+  .cal-wrap{grid-template-columns:1fr}
+  .news-wrap{grid-template-columns:1fr}
+  .ad-cols{grid-template-columns:1fr}
+}
+@media (max-width:920px){
+  .layout{grid-template-columns:1fr;padding:14px 12px 40px}
+  .sidebar{position:static;display:flex;flex-wrap:wrap;gap:5px;padding:8px}
+  .nav-item{width:auto}
+  .nav-divider,.nav-soon-label,.sidebar-foot,.nav-item.disabled{display:none}
+  .header-inner{padding:10px 12px}
+  .chart-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .cum-band{grid-template-columns:repeat(2,1fr)}
+  .rec-form{grid-template-columns:1fr}
+  .date-display{min-width:0;font-size:16px}
+  .ad-metrics{grid-template-columns:repeat(2,1fr)}
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,.4);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+::selection{background:rgba(124,110,247,.25)}
+</style>
+</head>
+<body>
+<div class="aurora aurora-1"></div><div class="aurora aurora-2"></div><div class="aurora aurora-3"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div>
+        <h1>maxforfun 电商运营工作台</h1>
+        <p class="brand-sub">淘宝 / 天猫 · 数据截至 <span id="dataThrough">-</span></p>
+      </div>
+    </div>
+    <span id="storageBadge" class="badge"><span class="dot"></span><span id="storageText">连接中…</span></span>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar glass">
+    <button class="nav-item active" data-view="report"><span class="nav-icon">📊</span>数据日报</button>
+    <button class="nav-item" data-view="ads"><span class="nav-icon">🎯</span>投放分析</button>
+    <button class="nav-item" data-view="products"><span class="nav-icon">🛍️</span>商品全景</button>
+    <button class="nav-item" data-view="reviews"><span class="nav-icon">💬</span>评价诊断</button>
+    <button class="nav-item" data-view="calendar"><span class="nav-icon">📅</span>月度日历</button>
+    <button class="nav-item" data-view="records"><span class="nav-icon">📝</span>操作记录<span id="recordCount" class="nav-badge" hidden></span></button>
+    <button class="nav-item" data-view="news"><span class="nav-icon">📰</span>行业情报</button>
+    <button class="nav-item" data-view="weekly"><span class="nav-icon">📈</span>经营周报</button>
+    <a class="nav-item" href="https://my.feishu.cn/wiki/APRrwAfpviZ70skY5Gyckw1Mnde" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="nav-icon">📚</span>推广知识库<span style="margin-left:auto;font-size:11px;opacity:.5">↗</span></a>
+    <div class="nav-divider"></div>
+    <div class="nav-soon-label">规 划 中</div>
+    <div class="nav-item disabled"><span class="nav-icon">🔭</span>竞品监控<span class="soon-tag">soon</span></div>
+    <div class="sidebar-foot">
+      退款率=退款÷支付<br>ROI=成交÷花费<br>回款=支付−退款<br>推广占比=花费÷回款<br>PPC=花费÷点击
+    </div>
+  </aside>
+
+  <main>
+    <!-- ========== 数据日报 ========== -->
+    <section id="view-report">
+      <div class="report-toolbar">
+        <div class="glass" style="padding:5px 9px;display:flex;align-items:center;gap:8px">
+          <button class="icon-btn" id="prevDay" title="上一天">‹</button>
+          <div class="date-display date-pick" id="reportDatePick" title="点击选择日期"><span id="reportDate">-</span><span class="wd" id="reportWeekday"></span><span class="caret">▾</span></div>
+          <button class="icon-btn" id="nextDay" title="下一天">›</button>
+        </div>
+        <div class="toolbar-right">
+          <a id="fullDashBtn" class="btn btn-primary" target="_blank" rel="noopener" hidden>📈 完整看板</a>
+          <button id="fullDashDisabled" class="btn" disabled title="该日完整看板未上传（在线保留最近7天）">📈 完整看板</button>
+          <button class="btn" id="recordThisDay">📝 记一笔</button>
+        </div>
+      </div>
+      <div class="alerts" id="alerts"></div>
+      <div class="kpi-grid" id="kpiRow1"></div>
+      <div class="kpi-grid" id="kpiRow2"></div>
+      <div class="section-title" style="margin-top:18px">📅 本月累计 <span class="st-sub" id="cumMonthLabel"></span></div>
+      <div class="cum-band" id="cumBand"></div>
+      <div class="chart-grid">
+        <div class="chart-card glass"><div class="chart-title">近30天 · 支付金额与回款</div><div class="chart-box"><canvas id="chartPay"></canvas></div></div>
+        <div class="chart-card glass"><div class="chart-title">近30天 · 推广消耗与ROI</div><div class="chart-box"><canvas id="chartAd"></canvas></div></div>
+        <div class="chart-card glass"><div class="chart-title">近30天 · 访客数与支付转化率</div><div class="chart-box"><canvas id="chartUv"></canvas></div></div>
+        <div class="chart-card glass"><div class="chart-title">近30天 · 金额退款率</div><div class="chart-box"><canvas id="chartRefund"></canvas></div></div>
+      </div>
+    </section>
+
+    <!-- ========== 投放分析 ========== -->
+    <section id="view-ads" hidden>
+      <div class="report-toolbar">
+        <div class="glass" style="padding:5px 9px;display:flex;align-items:center;gap:8px">
+          <button class="icon-btn" id="adsPrevDay" title="上一天">‹</button>
+          <div class="date-display date-pick" id="adsDatePick" title="点击选择日期"><span id="adsDate">-</span><span class="wd" id="adsWeekday"></span><span class="caret">▾</span></div>
+          <button class="icon-btn" id="adsNextDay" title="下一天">›</button>
+        </div>
+        <div class="toolbar-right"><span class="st-sub" style="font-size:11.5px;color:var(--text-lo)">口径：拉新=新客成交/PPC/加购成本 · 转化=点击转化率/ROI</span></div>
+      </div>
+      <div class="ad-cols">
+        <div class="ad-col glass">
+          <div class="ad-col-title"><span class="tag">拉新</span>拉新指标</div>
+          <div class="ad-metrics" id="adAcq"></div>
+        </div>
+        <div class="ad-col glass">
+          <div class="ad-col-title"><span class="tag">转化</span>转化指标</div>
+          <div class="ad-metrics" id="adConv"></div>
+        </div>
+      </div>
+      <div class="diag-card glass">
+        <div class="section-title" style="margin-bottom:10px">🩺 投放诊断 <span class="st-sub" id="diagSub"></span></div>
+        <div id="diagBody"></div>
+      </div>
+      <div class="glass card">
+        <div class="section-title">📋 计划明细 <span class="st-sub">按消耗排序 · 健康度标注</span></div>
+        <div class="plan-table-wrap"><table class="plan-table" id="planTable"></table></div>
+      </div>
+    </section>
+
+    <!-- ========== 商品全景 ========== -->
+    <section id="view-products" hidden>
+      <div class="report-toolbar">
+        <div class="glass" style="padding:5px 9px;display:flex;align-items:center;gap:8px">
+          <button class="icon-btn" id="prodPrevDay" title="上一天">‹</button>
+          <div class="date-display date-pick" id="productsDatePick" title="点击选择日期"><span id="prodDate">-</span><span class="wd" id="prodWeekday"></span><span class="caret">▾</span></div>
+          <button class="icon-btn" id="prodNextDay" title="下一天">›</button>
+        </div>
+        <div class="toolbar-right"><span class="st-sub" style="font-size:11.5px;color:var(--text-lo)">商品明细在线保留最近14天</span></div>
+      </div>
+      <div class="kpi-grid" id="prodKpis"></div>
+      <div class="chart-grid" style="grid-template-columns:1fr;margin-top:14px">
+        <div class="chart-card glass"><div class="chart-title">🫧 商品健康度矩阵 · 访客 × 转化率（气泡大小=支付金额，红色=退款率&gt;30%）</div><div class="chart-box" style="height:340px"><canvas id="chartProd"></canvas></div></div>
+      </div>
+      <div class="prod-cols">
+        <div class="glass card"><div class="section-title">🔴 高退款商品 <span class="st-sub">退款率&gt;30% · 按退款额排序</span></div><div id="prodRefundList"></div></div>
+        <div class="glass card"><div class="section-title">🚦 高流量低转化 <span class="st-sub">访客≥100 且转化&lt;1%</span></div><div id="prodTrafficList"></div></div>
+        <div class="glass card"><div class="section-title">💰 支付 TOP10</div><div id="prodTopList"></div></div>
+      </div>
+    </section>
+
+    <!-- ========== 评价诊断 ========== -->
+    <section id="view-reviews" hidden>
+      <div class="report-toolbar">
+        <div class="section-title" style="margin:0">💬 评价诊断 <span class="st-sub">来源：评价采集器 · 按维度自动聚类</span></div>
+      </div>
+      <div class="kpi-grid" id="revKpis"></div>
+      <div class="prod-cols" style="grid-template-columns:1fr 1fr">
+        <div class="glass card"><div class="section-title">🧩 差评维度聚类 <span class="st-sub">差评集中在哪些维度，一眼定位问题</span></div><div id="revCats"></div></div>
+        <div class="glass card"><div class="section-title">🔴 差评商品 TOP</div><div id="revProducts"></div></div>
+      </div>
+      <div class="glass card" style="margin-top:14px"><div class="section-title">🗣️ 最新差评原声</div><div id="revQuotes"></div></div>
+    </section>
+
+    <!-- ========== 经营周报 ========== -->
+    <section id="view-weekly" hidden>
+      <div class="report-toolbar">
+        <div class="glass" style="padding:5px 9px;display:flex;align-items:center;gap:8px">
+          <button class="icon-btn" id="weekPrev" title="上一周">‹</button>
+          <div class="date-display" id="weekRange" style="min-width:220px">-</div>
+          <button class="icon-btn" id="weekNext" title="下一周">›</button>
+        </div>
+        <div class="toolbar-right"><span class="st-sub" style="font-size:11.5px;color:var(--text-lo)">周=截至所选日7天 · 每周一自动生成MD</span></div>
+      </div>
+      <div class="glass card"><div class="section-title">📊 本周核心（环比上周）</div><div id="weekTable"></div></div>
+      <div class="prod-cols">
+        <div class="glass card"><div class="section-title">💰 商品支付 TOP5</div><div id="weekTop"></div></div>
+        <div class="glass card"><div class="section-title">↩️ 退款重灾区</div><div id="weekBad"></div></div>
+        <div class="glass card"><div class="section-title">⚠️ 异常回顾</div><div id="weekAnoms"></div></div>
+      </div>
+      <div class="glass card" style="margin-top:14px"><div class="section-title">📝 本周操作</div><div id="weekRecs"></div></div>
+    </section>
+
+    <!-- ========== 月度日历 ========== -->
+    <section id="view-calendar" hidden>
+      <div class="cal-wrap">
+        <div class="glass card">
+          <div class="cal-head">
+            <button class="icon-btn" id="prevMonth">‹</button>
+            <div class="cal-title" id="calTitle">-</div>
+            <button class="icon-btn" id="nextMonth">›</button>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+              <button class="btn" id="calToday">回到今天</button>
+              <span class="badge" style="padding:4px 10px"><span class="mark-record" style="width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,#7C6EF7,#4F8DF7)"></span>有记录&nbsp;<span class="mark-data" style="width:6px;height:6px;border-radius:50%;background:#22D3EE"></span>有数据</span>
+            </div>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+        <div class="glass card cal-detail" id="calDetail"></div>
+      </div>
+    </section>
+
+    <!-- ========== 操作记录 ========== -->
+    <section id="view-records" hidden>
+      <div class="glass card" style="margin-bottom:16px">
+        <div class="section-title">✍️ 登记操作事项 <span class="st-sub">记录每天对店铺做过的操作，复盘时对照数据变化</span></div>
+        <div class="rec-form">
+          <input type="date" id="recDate">
+          <select id="recCategory">
+            <option>推广调整</option><option>商品优化</option><option>活动营销</option><option>评价客服</option><option>其他</option>
+          </select>
+          <textarea id="recContent" placeholder="例如：关键词计划A降低出价10%，暂停3个低ROI单元；更换主推款主图…"></textarea>
+          <button class="btn btn-primary" id="recSubmit" style="height:36px">添加记录</button>
+        </div>
+      </div>
+      <div id="recGroups"></div>
+    </section>
+
+    <!-- ========== 行业情报 ========== -->
+    <section id="view-news" hidden>
+      <div class="intel-card glass">
+        <div class="intel-head">
+          <span style="font-size:16px">🤖</span>
+          <span class="intel-date" id="intelDate">AI 每日情报</span>
+          <span class="intel-upd" id="intelUpd"></span>
+        </div>
+        <div id="intelBody"><div class="news-empty">加载中…</div></div>
+      </div>
+      <div class="news-wrap">
+        <div>
+          <div class="news-col glass" style="margin-bottom:14px">
+            <div class="news-col-title">🛒 电商行业热点 <span class="src">每日精选 + 关键词筛选</span></div>
+            <div id="newsEcom"><div class="news-empty">加载中…</div></div>
+          </div>
+          <div class="news-col glass">
+            <div class="news-col-title">🔥 科技商业热榜 <span class="src">IT之家</span></div>
+            <div id="newsBiz"><div class="news-empty">加载中…</div></div>
+          </div>
+        </div>
+        <div class="news-col glass">
+          <div class="news-col-title">✨ AI 前沿 <span class="src">雷峰网 + 每日精选</span>
+            <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
+              <span class="intel-upd" id="newsUpd"></span>
+              <button class="icon-btn" id="newsRefresh" title="刷新">⟳</button>
+            </span>
+          </div>
+          <div id="newsAi"><div class="news-empty">加载中…</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="datePicker" class="date-picker glass" hidden>
+  <div class="dp-head">
+    <button class="icon-btn" id="dpPrev" title="上一月">‹</button>
+    <div class="dp-title" id="dpTitle"></div>
+    <button class="icon-btn" id="dpNext" title="下一月">›</button>
+  </div>
+  <div class="dp-grid" id="dpGrid"></div>
+  <div class="dp-note">仅可选有数据的日期 · 在线保留最近7天</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+const state = { data: null, records: [], storage: 'memory', view: 'report', selDate: null, weekEnd: null, calCursor: null, charts: {}, newsLoaded: false, alertChips: [], alertIdx: 0 };
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+const CATEGORIES = ['推广调整','商品优化','活动营销','评价客服','其他'];
+
+const $ = (id) => document.getElementById(id);
+const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
+function fmtMoney(v, dec = 2) { return '¥' + (Number(v) || 0).toLocaleString('zh-CN', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+function fmtMoneyCompact(v) { const n = Number(v) || 0; if (Math.abs(n) >= 10000) return '¥' + (n / 10000).toFixed(1) + '万'; return '¥' + Math.round(n).toLocaleString('zh-CN'); }
+function fmtInt(v) { return (Number(v) || 0).toLocaleString('zh-CN'); }
+function fmtPct(v) { return r2(v).toFixed(2) + '%'; }
+function fmtRatio(v) { return r2(v).toFixed(2); }
+function dateStr(y, m, d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function weekdayOf(ds) { return WEEKDAYS[new Date(ds + 'T00:00:00').getDay()]; }
+function cnDate(ds) { const p = ds.split('-'); return `${+p[1]}月${+p[2]}日`; }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2600); }
+function relTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d)) return '';
+  const diff = (Date.now() - d.getTime()) / 60000;
+  if (diff < 1) return '刚刚';
+  if (diff < 60) return Math.floor(diff) + '分钟前';
+  if (diff < 1440) return Math.floor(diff / 60) + '小时前';
+  return Math.floor(diff / 1440) + '天前';
+}
+
+/* ---------- 数据派生 ---------- */
+function getDay(ds) { return state.data.daily[ds] || null; }
+function sortedDates() { return state.data.dates; }
+function prevDataDate(ds) { const i = sortedDates().indexOf(ds); return i > 0 ? sortedDates()[i - 1] : null; }
+function refundRateOf(d) { return d && d.pay_amount > 0 ? d.refund_amount / d.pay_amount * 100 : 0; }
+function netOf(d) { return d ? (d.pay_amount || 0) - (d.refund_amount || 0) : 0; }
+function roiOf(d) { return d && d.total_cost > 0 ? d.total_pay_amount / d.total_cost : 0; }
+function promoRatioOf(d) { const n = netOf(d); return d && n > 0 ? d.total_cost / n * 100 : 0; }
+function convOf(d) { return d ? (d.pay_rate < 1 ? d.pay_rate * 100 : d.pay_rate) : 0; }
+function pctChange(cur, prev) { return prev ? (cur - prev) / prev * 100 : 0; }
+function monthCum(ds) {
+  const prefix = ds.slice(0, 7);
+  const c = { pay: 0, refund: 0, buyers: 0, cart: 0, cost: 0, adPay: 0 };
+  for (const d of sortedDates()) {
+    if (!d.startsWith(prefix) || d > ds) continue;
+    const r = getDay(d); if (!r) continue;
+    c.pay += r.pay_amount || 0; c.refund += r.refund_amount || 0; c.buyers += r.pay_buyer_cnt || 0;
+    c.cart += r.cart_cnt || 0; c.cost += r.total_cost || 0; c.adPay += r.total_pay_amount || 0;
+  }
+  c.net = c.pay - c.refund;
+  c.refundRate = c.pay > 0 ? c.refund / c.pay * 100 : 0;
+  c.promoRatio = c.net > 0 ? c.cost / c.net * 100 : 0;
+  c.roi = c.cost > 0 ? c.adPay / c.cost : 0;
+  return c;
+}
+function recordsByDate(ds) { return state.records.filter(r => r.record_date === ds); }
+function recordDates() { return new Set(state.records.map(r => r.record_date)); }
+
+/* ---------- 日报视图 ---------- */
+function deltaHtml(chg) {
+  if (chg === null || chg === undefined || !isFinite(chg)) return '<span class="kpi-delta flat">—</span>';
+  if (chg > 0) return `<span class="kpi-delta up">↑${chg.toFixed(1)}%</span>`;
+  if (chg < 0) return `<span class="kpi-delta down">↓${Math.abs(chg).toFixed(1)}%</span>`;
+  return '<span class="kpi-delta flat">→0.0%</span>';
+}
+const ICON_TINTS = { pay:'rgba(79,70,229,.12)', uv:'rgba(34,211,238,.14)', buyer:'rgba(16,185,129,.13)', conv:'rgba(245,158,11,.14)', price:'rgba(59,130,246,.12)', uvv:'rgba(124,110,247,.12)', net:'rgba(16,185,129,.13)', refund:'rgba(239,68,68,.11)', rrate:'rgba(239,68,68,.11)', cost:'rgba(245,158,11,.14)', adpay:'rgba(79,70,229,.12)', roi:'rgba(16,185,129,.13)' };
+function kpiCard(icon, tint, label, value, delta) {
+  return `<div class="kpi-card glass glass-hover"><div class="kpi-top"><div class="kpi-icon" style="background:${tint}">${icon}</div><div class="kpi-label">${label}</div></div><div class="kpi-value tabnum">${value}</div><div>${delta || '<span class="kpi-delta flat">&nbsp;</span>'}</div></div>`;
+}
+/* 运营建议轮播 */
+function renderAlerts(chips) {
+  state.alertChips = chips;
+  showAlert(chips.length ? (state.alertIdx % chips.length) : 0);
+}
+function showAlert(i) {
+  const chips = state.alertChips || [];
+  if (!chips.length) { $('alerts').innerHTML = ''; return; }
+  if (!Number.isFinite(i)) i = 0;
+  state.alertIdx = ((i % chips.length) + chips.length) % chips.length;
+  const [c, t] = chips[state.alertIdx];
+  const icon = c === 'red' ? '🔴' : c === 'yellow' ? '🟡' : '🟢';
+  $('alerts').innerHTML = `<div class="alert-carousel"><span class="alert-chip ${c} slide">${icon} ${t}</span><div class="alert-dots">${chips.map((_, j) => `<button class="alert-dot${j === state.alertIdx ? ' on' : ''}" data-i="${j}" title="第${j + 1}条"></button>`).join('')}</div><span class="alert-idx">${state.alertIdx + 1} / ${chips.length}</span></div>`;
+  $('alerts').querySelectorAll('.alert-dot').forEach(d => d.onclick = () => showAlert(+d.dataset.i));
+}
+setInterval(() => { if (state.view === 'report' && (state.alertChips || []).length > 1) showAlert(state.alertIdx + 1); }, 4000);
+function renderReport() {
+  const ds = state.selDate, d = getDay(ds);
+  $('reportDate').textContent = ds;
+  $('reportWeekday').textContent = weekdayOf(ds);
+  const idx = sortedDates().indexOf(ds);
+  $('prevDay').disabled = idx <= 0;
+  $('nextDay').disabled = idx >= sortedDates().length - 1;
+  const hasDash = (state.data.dashboards || []).includes(ds);
+  $('fullDashBtn').hidden = !hasDash;
+  $('fullDashDisabled').hidden = hasDash;
+  if (hasDash) $('fullDashBtn').href = `dashboards/${ds}.html`;
+  if (!d) { $('alerts').innerHTML = '<span class="alert-chip yellow">⚠️ 当日无数据</span>'; $('kpiRow1').innerHTML = ''; $('kpiRow2').innerHTML = ''; $('cumBand').innerHTML = ''; return; }
+  const yd = getDay(prevDataDate(ds));
+  const conv = convOf(d), rrate = refundRateOf(d), roi = roiOf(d), cumR = monthCum(ds);
+  const chips = [];
+  chips.push(conv < 3 ? ['red','转化率偏低，建议优化详情页和主图'] : conv < 5 ? ['yellow','转化率有提升空间，可测试不同卖点文案'] : ['green','转化率表现良好']);
+  chips.push(rrate > 30 ? ['red','退款率偏高，需排查品质/描述问题'] : rrate > 15 ? ['yellow','退款率需关注'] : ['green','退款率正常']);
+  chips.push(roi < 5 ? ['red','推广ROI偏低，建议调整投放策略'] : roi < 10 ? ['yellow','推广ROI尚可，可优化高消耗低转化计划'] : ['green','推广ROI表现优秀']);
+  chips.push(cumR.promoRatio > 10 ? ['red','累计推广占比过高，注意控制成本'] : cumR.promoRatio > 5 ? ['yellow','累计推广占比适中'] : ['green','累计推广占比健康']);
+  renderAlerts(chips);
+  $('kpiRow1').innerHTML = [
+    kpiCard('💰', ICON_TINTS.pay, '支付金额', fmtMoney(d.pay_amount), deltaHtml(yd ? pctChange(d.pay_amount, yd.pay_amount) : null)),
+    kpiCard('👥', ICON_TINTS.uv, '访客数', fmtInt(d.uv), deltaHtml(yd ? pctChange(d.uv, yd.uv) : null)),
+    kpiCard('🛒', ICON_TINTS.buyer, '支付买家数', fmtInt(d.pay_buyer_cnt), deltaHtml(yd ? pctChange(d.pay_buyer_cnt, yd.pay_buyer_cnt) : null)),
+    kpiCard('🎯', ICON_TINTS.conv, '支付转化率', fmtPct(conv), deltaHtml(yd ? pctChange(conv, convOf(yd)) : null)),
+    kpiCard('🏷️', ICON_TINTS.price, '客单价', fmtMoney(d.avg_price)),
+    kpiCard('✨', ICON_TINTS.uvv, 'UV价值', fmtMoney(d.uv > 0 ? d.pay_amount / d.uv : 0))
+  ].join('');
+  $('kpiRow2').innerHTML = [
+    kpiCard('💵', ICON_TINTS.net, '回款金额', fmtMoney(netOf(d))),
+    kpiCard('↩️', ICON_TINTS.refund, '成功退款', fmtMoney(d.refund_amount || 0), deltaHtml(yd ? pctChange(d.refund_amount || 0, yd.refund_amount || 0) : null)),
+    kpiCard('📉', ICON_TINTS.rrate, '金额退款率', fmtPct(rrate)),
+    kpiCard('📢', ICON_TINTS.cost, '推广计划消耗', fmtMoney(d.total_cost || 0)),
+    kpiCard('🧾', ICON_TINTS.adpay, '推广计划成交', fmtMoney(d.total_pay_amount || 0)),
+    kpiCard('🚀', ICON_TINTS.roi, '推广ROI', fmtRatio(roi))
+  ].join('');
+  $('cumMonthLabel').textContent = `${ds.slice(0,4)}年${ds.slice(5,7)}月 · 自1日累计`;
+  const cumItems = [
+    ['#4F46E5','累计支付', fmtMoneyCompact(cumR.pay)], ['#10B981','累计回款', fmtMoneyCompact(cumR.net)],
+    ['#EF4444','累计退款率', fmtPct(cumR.refundRate)], ['#F59E0B','累计推广花费', fmtMoneyCompact(cumR.cost)],
+    ['#7C6EF7','累计推广占比', fmtPct(cumR.promoRatio)], ['#22D3EE','累计推广ROI', fmtRatio(cumR.roi)],
+    ['#3B82F6','累计支付买家', fmtInt(cumR.buyers)], ['#059669','累计加购', fmtInt(cumR.cart)]
+  ];
+  $('cumBand').innerHTML = cumItems.map(([c, l, v]) => `<div class="cum-card glass"><div class="cum-label"><span class="cum-dot" style="color:${c};background:${c}"></span>${l}</div><div class="cum-value tabnum">${v}</div></div>`).join('');
+  renderCharts();
+}
+
+/* ---------- 图表 ---------- */
+let chartDefaultsSet = false;
+function setChartDefaults() {
+  if (chartDefaultsSet || typeof Chart === 'undefined') return;
+  Chart.defaults.color = '#64748B';
+  Chart.defaults.borderColor = 'rgba(15,23,42,.06)';
+  Chart.defaults.font.family = '-apple-system,"PingFang SC",sans-serif';
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,.92)';
+  Chart.defaults.plugins.tooltip.titleColor = '#fff';
+  Chart.defaults.plugins.tooltip.bodyColor = '#fff';
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  chartDefaultsSet = true;
+}
+function last30() { return sortedDates().slice(-30).map(ds => ({ ds, d: getDay(ds) })); }
+function destroyChart(k) { if (state.charts[k]) { state.charts[k].destroy(); delete state.charts[k]; } }
+function renderCharts() {
+  setChartDefaults();
+  if (typeof Chart === 'undefined') return;
+  const rows = last30();
+  const labels = rows.map(r => cnDate(r.ds));
+  const pay = rows.map(r => r2(r.d.pay_amount || 0));
+  const net = rows.map(r => r2(netOf(r.d)));
+  const cost = rows.map(r => r2(r.d.total_cost || 0));
+  const roi = rows.map(r => r2(roiOf(r.d)));
+  const uv = rows.map(r => r.d.uv || 0);
+  const conv = rows.map(r => r2(convOf(r.d)));
+  const rrate = rows.map(r => r2(refundRateOf(r.d)));
+  const baseOpts = (yTitle) => ({ responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true } } }, scales: { x: { ticks: { maxTicksLimit: 8 } }, y: { title: yTitle ? { display: true, text: yTitle } : undefined } } });
+  destroyChart('pay');
+  state.charts.pay = new Chart($('chartPay'), { type: 'line', data: { labels, datasets: [
+    { label: '支付金额', data: pay, borderColor: '#4F46E5', backgroundColor: 'rgba(79,70,229,.1)', fill: true, tension: .35, pointRadius: 2 },
+    { label: '回款', data: net, borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,.08)', fill: true, tension: .35, pointRadius: 2 } ] }, options: baseOpts('元') });
+  destroyChart('ad');
+  state.charts.ad = new Chart($('chartAd'), { data: { labels, datasets: [
+    { type: 'bar', label: '推广消耗', data: cost, backgroundColor: 'rgba(245,158,11,.55)', borderRadius: 4, yAxisID: 'y' },
+    { type: 'line', label: '推广ROI', data: roi, borderColor: '#4F46E5', tension: .35, pointRadius: 2, yAxisID: 'y1' } ] },
+    options: { ...baseOpts('元'), scales: { x: { ticks: { maxTicksLimit: 8 } }, y: { position: 'left', title: { display: true, text: '消耗(元)' } }, y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'ROI' } } } } });
+  destroyChart('uv');
+  state.charts.uv = new Chart($('chartUv'), { data: { labels, datasets: [
+    { type: 'bar', label: '访客数', data: uv, backgroundColor: 'rgba(34,211,238,.45)', borderRadius: 4, yAxisID: 'y' },
+    { type: 'line', label: '支付转化率(%)', data: conv, borderColor: '#EF4444', tension: .35, pointRadius: 2, yAxisID: 'y1' } ] },
+    options: { ...baseOpts(), scales: { x: { ticks: { maxTicksLimit: 8 } }, y: { position: 'left', title: { display: true, text: '访客' } }, y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '转化率(%)' } } } } });
+  destroyChart('refund');
+  state.charts.refund = new Chart($('chartRefund'), { type: 'line', data: { labels, datasets: [
+    { label: '金额退款率(%)', data: rrate, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,.08)', fill: true, tension: .35, pointRadius: 2 } ] }, options: baseOpts('%') });
+}
+
+/* ---------- 投放分析 ---------- */
+function adMetricsOf(d) {
+  const cost = d.total_cost || 0, clicks = d.total_clicks || 0, carts = d.total_cart_cnt || 0;
+  const pays = d.total_pay_cnt || 0, nb = d.total_new_buyer_cnt || 0, pb = d.total_pay_buyer_cnt || 0;
+  return {
+    cost, clicks,
+    ppc: clicks > 0 ? cost / clicks : 0,
+    carts,
+    cartCost: carts > 0 ? cost / carts : 0,
+    newBuyers: nb,
+    newCost: nb > 0 ? cost / nb : 0,
+    newRatio: pb > 0 ? nb / pb : 0,
+    guided: d.total_guided_visit_cnt || 0,
+    potRatio: (d.total_potential_visitor_ratio || 0) * 100,
+    adPay: d.total_pay_amount || 0,
+    cvr: clicks > 0 ? pays / clicks * 100 : 0,
+    roi: cost > 0 ? d.total_pay_amount / cost : 0
+  };
+}
+function avg7Before(ds) {
+  const i = sortedDates().indexOf(ds);
+  const win = sortedDates().slice(Math.max(0, i - 7), i).map(getDay).filter(Boolean);
+  if (!win.length) return null;
+  const acc = { ppc: 0, cartCost: 0, cvr: 0, roi: 0, newRatio: 0, n: win.length };
+  for (const d of win) { const m = adMetricsOf(d); acc.ppc += m.ppc; acc.cartCost += m.cartCost; acc.cvr += m.cvr; acc.roi += m.roi; acc.newRatio += m.newRatio; }
+  for (const k of ['ppc','cartCost','cvr','roi','newRatio']) acc[k] /= acc.n;
+  return acc;
+}
+function renderAds() {
+  const ds = state.selDate, d = getDay(ds);
+  $('adsDate').textContent = ds;
+  $('adsWeekday').textContent = weekdayOf(ds);
+  const idx = sortedDates().indexOf(ds);
+  $('adsPrevDay').disabled = idx <= 0;
+  $('adsNextDay').disabled = idx >= sortedDates().length - 1;
+  if (!d || !d.total_cost) {
+    $('adAcq').innerHTML = $('adConv').innerHTML = '<div class="news-empty">当日无投放数据</div>';
+    $('diagBody').innerHTML = ''; $('planTable').innerHTML = '';
+    return;
+  }
+  const m = adMetricsOf(d);
+  const metric = (l, v, s) => `<div class="ad-metric"><div class="l">${l}</div><div class="v tabnum">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`;
+  $('adAcq').innerHTML = [
+    metric('推广花费', fmtMoney(m.cost)),
+    metric('新客成交人数', fmtInt(m.newBuyers)),
+    metric('PPC', fmtMoney(m.ppc), '花费÷点击'),
+    metric('加购成本', fmtMoney(m.cartCost), `加购 ${fmtInt(m.carts)} 件`),
+    metric('新客获取成本', m.newBuyers > 0 ? fmtMoney(m.newCost) : '—', '花费÷新客数'),
+    metric('成交新客占比', fmtPct(m.newRatio * 100), '新客÷成交买家'),
+    metric('引导访问', fmtInt(m.guided)),
+    metric('潜客占比', fmtPct(m.potRatio), '潜客÷引导访问')
+  ].join('');
+  $('adConv').innerHTML = [
+    metric('点击量', fmtInt(m.clicks)),
+    metric('点击转化率', fmtPct(m.cvr), '成交÷点击'),
+    metric('计划成交', fmtMoney(m.adPay)),
+    metric('ROI', fmtRatio(m.roi), '成交÷花费'),
+    metric('成交笔数', fmtInt(d.total_pay_cnt || 0)),
+    metric('成交买家', fmtInt(d.total_pay_buyer_cnt || 0)),
+    metric('加购数', fmtInt(m.carts)),
+    metric('曝光', fmtInt(d.total_impressions || 0))
+  ].join('');
+
+  /* 诊断 */
+  const avg = avg7Before(ds);
+  $('diagSub').textContent = avg ? `对比近7日均值 · ${ds}` : ds;
+  const problems = [], actions = [];
+  if (avg) {
+    if (avg.ppc > 0 && m.ppc > avg.ppc * 1.2) {
+      problems.push(['yellow', `PPC 上升：今日 ${fmtMoney(m.ppc)} vs 7日均值 ${fmtMoney(avg.ppc)}（+${pctChange(m.ppc, avg.ppc).toFixed(0)}%）→ 出价/人群/创意点击效率问题`]);
+      actions.push([2, '检查高消耗计划出价与人群包精准度，暂停点击成本高且无转化的单元（影响：高，改动成本：低）']);
+    }
+    if (avg.cartCost > 0 && m.cartCost > avg.cartCost * 1.2) {
+      problems.push(['yellow', `加购成本偏高：${fmtMoney(m.cartCost)} vs 7日 ${fmtMoney(avg.cartCost)} → 详情页承接弱或人群不精准`]);
+      actions.push([2, '优化详情页卖点承接与主图一致性，收窄泛流量人群（影响：中，改动成本：中）']);
+    }
+    if (avg.cvr > 0 && m.cvr < avg.cvr * 0.8) {
+      problems.push(['red', `点击转化率下滑：${fmtPct(m.cvr)} vs 7日 ${fmtPct(avg.cvr)} → 价格/卖点/评价或承接页问题`]);
+      actions.push([1, '排查主推款评价区与问大家负面、核对竞品价格，必要时调整券面额（影响：高，改动成本：低）']);
+    }
+    if (m.roi < 5 && avg.cvr > 0 && m.cvr >= avg.cvr * 0.9) {
+      problems.push(['yellow', `ROI 偏低（${fmtRatio(m.roi)}）但转化率正常 → 客单价/毛利问题，非投放问题`]);
+      actions.push([3, '搭配连带/满赠提升客单价，投放向高客单单品倾斜（影响：中，改动成本：中）']);
+    }
+    if (m.newRatio < 0.4) {
+      problems.push(['blue', `成交新客占比 ${fmtPct(m.newRatio * 100)} 偏低 → 拉新人群被老客稀释，需拆人群`]);
+      actions.push([2, '单独建拉新计划（新客专属人群包+新客券），与老客计划隔离出价（影响：中，改动成本：低）']);
+    }
+    if (m.roi >= 5 && m.ppc <= (avg.ppc || 0) * 1.2) {
+      problems.push(['green', '投放整体健康：ROI 与点击成本均在正常区间']);
+    }
+  }
+  const priLabel = { 1: 'P1', 2: 'P2', 3: 'P3' };
+  actions.sort((a, b) => a[0] - b[0]);
+  $('diagBody').innerHTML = `
+    <div class="diag-block"><div class="diag-h">问题定位</div>${problems.length ? problems.map(([c, t]) => `<div class="diag-item"><span class="flag ${c}">${c === 'red' ? '严重' : c === 'yellow' ? '关注' : c === 'blue' ? '结构' : '健康'}</span><div>${t}</div></div>`).join('') : '<div class="diag-item"><span class="flag green">健康</span><div>未发现明显异常</div></div>'}</div>
+    <div class="diag-block"><div class="diag-h">优化动作（按优先级）</div>${actions.length ? actions.map(([p, t]) => `<div class="diag-item"><span class="pri p${p}">${priLabel[p]}</span><div>${t}</div></div>`).join('') : '<div class="diag-item"><span class="flag green">维持</span><div>当前无需调整，保持观察</div></div>'}</div>`;
+
+  /* 计划明细 */
+  const plans = (state.data.plans || {})[ds] || [];
+  const acct = m;
+  const avgCost = plans.length ? plans.reduce((s, p) => s + (p.cost || 0), 0) / plans.length : 0;
+  const rows = plans.slice().sort((a, b) => (b.cost || 0) - (a.cost || 0)).slice(0, 15);
+  if (!rows.length) { $('planTable').innerHTML = '<tr><td style="padding:16px;color:var(--text-lo)">当日无计划明细</td></tr>'; return; }
+  $('planTable').innerHTML = `<thead><tr><th>计划</th><th style="text-align:right">消耗</th><th style="text-align:right">点击</th><th style="text-align:right">PPC</th><th style="text-align:right">加购</th><th style="text-align:right">加购成本</th><th style="text-align:right">成交</th><th style="text-align:right">点击CVR</th><th style="text-align:right">ROI</th><th style="text-align:right">新客</th><th>健康度</th></tr></thead><tbody>` +
+    rows.map(p => {
+      const ppc = p.clicks > 0 ? p.cost / p.clicks : 0;
+      const cc = p.cart_cnt > 0 ? p.cost / p.cart_cnt : 0;
+      const cvr = p.clicks > 0 ? p.pay_cnt / p.clicks * 100 : 0;
+      const chips = [];
+      if (p.roi < 3 && p.cost >= avgCost) chips.push('<span class="health-chip" style="background:rgba(239,68,68,.12);color:#DC2626">高耗低ROI</span>');
+      if (acct.ppc > 0 && ppc > acct.ppc * 1.5) chips.push('<span class="health-chip" style="background:rgba(245,158,11,.14);color:#B45309">PPC高</span>');
+      if (acct.cartCost > 0 && cc > acct.cartCost * 1.5 && p.cart_cnt > 0) chips.push('<span class="health-chip" style="background:rgba(245,158,11,.14);color:#B45309">加购成本高</span>');
+      if (acct.cvr > 0 && cvr < acct.cvr * 0.5) chips.push('<span class="health-chip" style="background:rgba(239,68,68,.1);color:#DC2626">低转化</span>');
+      if (p.pay_buyer_cnt > 0 && p.new_buyer_cnt / p.pay_buyer_cnt < 0.3) chips.push('<span class="health-chip" style="background:rgba(59,130,246,.1);color:#1D4ED8">拉新弱</span>');
+      if (!chips.length) chips.push('<span class="health-chip" style="background:rgba(16,185,129,.12);color:#047857">正常</span>');
+      return `<tr><td class="plan-name" title="${escapeHtml(p.plan_name || '')}">${escapeHtml(p.plan_name || '-')}</td>
+        <td class="num">${fmtMoney(p.cost || 0)}</td><td class="num">${fmtInt(p.clicks || 0)}</td><td class="num">${fmtMoney(ppc)}</td>
+        <td class="num">${fmtInt(p.cart_cnt || 0)}</td><td class="num">${cc ? fmtMoney(cc) : '—'}</td>
+        <td class="num">${fmtMoney(p.pay_amount || 0)}</td><td class="num">${fmtPct(cvr)}</td><td class="num">${fmtRatio(p.roi || 0)}</td>
+        <td class="num">${fmtInt(p.new_buyer_cnt || 0)}</td><td>${chips.join('')}</td></tr>`;
+    }).join('') + '</tbody>';
+}
+
+/* ---------- 商品全景 ---------- */
+function prodRows(ds) { return (state.data.products || {})[ds] || null; }
+function prodRowHtml(r, extra) {
+  const img = r.img ? `<img class="prod-thumb" src="${escapeHtml(r.img)}" alt="" loading="lazy">` : '';
+  return `<div class="prod-row${img ? ' has-img' : ''}">${img}<div class="prod-main"><div class="prod-title" title="${escapeHtml(r.t)}">${escapeHtml(r.t)}</div><div class="prod-nums"><span>访客 ${fmtInt(r.uv)}</span><span>支付 ${fmtMoneyCompact(r.pay)}</span><span>转化 ${r.rate.toFixed(2)}%</span>${extra || ''}</div></div></div>`;
+}
+function renderProdChart(rows) {
+  setChartDefaults();
+  if (typeof Chart === 'undefined') return;
+  destroyChart('prod');
+  const pts = rows.filter(r => r.uv > 0).map(r => ({
+    x: r.uv, y: r.rate, r: Math.max(4, Math.min(20, Math.sqrt(r.pay) / 2.2)),
+    t: r.t, pay: r.pay, ref: r.pay > 0 ? r.ref / r.pay * 100 : 0
+  }));
+  state.charts.prod = new Chart($('chartProd'), {
+    type: 'bubble',
+    data: { datasets: [{ label: '商品', data: pts,
+      backgroundColor: pts.map(p => p.ref > 30 ? 'rgba(239,68,68,.5)' : 'rgba(99,102,241,.42)'),
+      borderColor: pts.map(p => p.ref > 30 ? '#EF4444' : '#6366F1'), borderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => {
+        const p = c.raw;
+        return ` ${p.t}｜访客 ${p.x}·转化 ${p.y}%·支付 ${fmtMoneyCompact(p.pay)}·退款率 ${p.ref.toFixed(0)}%`;
+      } } } },
+      scales: { x: { title: { display: true, text: '访客数 UV' } }, y: { title: { display: true, text: '支付转化率 (%)' } } } }
+  });
+}
+function renderProducts() {
+  const ds = state.selDate;
+  $('prodDate').textContent = ds;
+  $('prodWeekday').textContent = weekdayOf(ds);
+  const idx = sortedDates().indexOf(ds);
+  $('prodPrevDay').disabled = idx <= 0;
+  $('prodNextDay').disabled = idx >= sortedDates().length - 1;
+  const rows = prodRows(ds);
+  const empty = '<div class="news-empty">该日商品明细不在在线保留期内（最近14天）</div>';
+  if (!rows) {
+    $('prodKpis').innerHTML = '';
+    $('prodRefundList').innerHTML = $('prodTrafficList').innerHTML = $('prodTopList').innerHTML = empty;
+    destroyChart('prod');
+    return;
+  }
+  const withPay = rows.filter(r => r.pay > 0);
+  const totalPay = withPay.reduce((s, r) => s + r.pay, 0);
+  const top10 = [...rows].sort((a, b) => b.pay - a.pay).slice(0, 10);
+  const top10Share = totalPay ? top10.reduce((s, r) => s + r.pay, 0) / totalPay * 100 : 0;
+  const highRef = withPay.filter(r => r.ref / r.pay * 100 > 30);
+  const highUvLow = rows.filter(r => r.uv >= 100 && r.rate < 1);
+  $('prodKpis').innerHTML = [
+    kpiCard('🛍️', ICON_TINTS.pay, '动销商品数', fmtInt(withPay.length)),
+    kpiCard('💰', ICON_TINTS.adpay, '商品支付合计', fmtMoneyCompact(totalPay)),
+    kpiCard('🎯', ICON_TINTS.conv, 'TOP10 支付占比', fmtPct(top10Share)),
+    kpiCard('↩️', ICON_TINTS.rrate, '高退款商品数', fmtInt(highRef.length)),
+    kpiCard('🚦', ICON_TINTS.uv, '高流量低转化数', fmtInt(highUvLow.length)),
+    kpiCard('🛒', ICON_TINTS.buyer, '总加购件数', fmtInt(rows.reduce((s, r) => s + (r.cart || 0), 0)))
+  ].join('');
+  renderProdChart(rows);
+  $('prodRefundList').innerHTML = [...highRef].sort((a, b) => b.ref - a.ref).slice(0, 8)
+    .map(r => prodRowHtml(r, `<span class="bad">退款率 ${(r.ref / r.pay * 100).toFixed(0)}%</span>`)).join('') || '<div class="news-empty">无 🎉</div>';
+  $('prodTrafficList').innerHTML = [...highUvLow].sort((a, b) => b.uv - a.uv).slice(0, 8)
+    .map(r => prodRowHtml(r, '<span class="bad">转化偏低</span>')).join('') || '<div class="news-empty">无 🎉</div>';
+  $('prodTopList').innerHTML = top10.map(r => prodRowHtml(r, `<span>加购 ${fmtInt(r.cart)}</span>`)).join('') || '<div class="news-empty">无</div>';
+}
+
+/* ---------- 评价诊断 ---------- */
+function renderReviews() {
+  const rv = state.data.reviews;
+  const empty = '<div class="news-empty">暂无评价数据。<br>在评价采集器目录运行：python3 main.py cookies（扫码登录淘宝），<br>再运行 python3 main.py product &lt;商品链接&gt; 开始采集，次日同步后自动点亮。</div>';
+  if (!rv || !rv.total) {
+    $('revKpis').innerHTML = '';
+    $('revCats').innerHTML = $('revProducts').innerHTML = $('revQuotes').innerHTML = empty;
+    return;
+  }
+  const negRate = rv.total ? rv.neg / rv.total * 100 : 0;
+  $('revKpis').innerHTML = [
+    kpiCard('💬', ICON_TINTS.pay, '总评价数', fmtInt(rv.total)),
+    kpiCard('🔴', ICON_TINTS.rrate, '差评数', fmtInt(rv.neg)),
+    kpiCard('📉', ICON_TINTS.refund, '差评率', fmtPct(negRate)),
+    kpiCard('🟢', ICON_TINTS.buyer, '好评数', fmtInt(rv.pos))
+  ].join('');
+  const maxC = (rv.cats[0] || { n: 1 }).n || 1;
+  $('revCats').innerHTML = rv.cats.length ? rv.cats.map((c, i) =>
+    `<div class="rev-cat"><span class="rev-cat-rank">${String(i + 1).padStart(2, '0')}</span><span class="rev-cat-k">${escapeHtml(c.k)}</span><div class="rev-cat-bar"><i style="width:${Math.max(4, Math.round(c.n / maxC * 100))}%"></i></div><span class="rev-cat-n"><b>${c.n}</b> · ${rv.neg ? Math.round(c.n / rv.neg * 100) : 0}%</span></div>`
+  ).join('') : '<div class="news-empty">无差评维度 🎉</div>';
+  $('revProducts').innerHTML = rv.products.map(p => {
+    const img = p.img ? `<img class="prod-thumb" src="${escapeHtml(p.img)}" alt="" loading="lazy">` : '';
+    return `<div class="prod-row${img ? ' has-img' : ''}">${img}<div class="prod-main"><div class="prod-title">${escapeHtml(p.t)}</div><div class="prod-nums"><span>评价 ${p.c}</span><span class="bad">差评 ${p.neg}</span></div></div></div>`;
+  }).join('') || '<div class="news-empty">无</div>';
+  $('revQuotes').innerHTML = rv.quotes.map(q =>
+    `<div class="prod-row"><div class="prod-title">${q.d} · ${escapeHtml(q.t)}</div><div class="prod-nums" style="white-space:normal">“${escapeHtml(q.s)}”</div></div>`
+  ).join('') || '<div class="news-empty">无差评 🎉</div>';
+}
+
+/* ---------- 经营周报 ---------- */
+function addDays(ds, n) { const d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() + n); return dateStr(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+function rangeDates(start, end) { return sortedDates().filter(d => d >= start && d <= end); }
+function sumRange(start, end) {
+  const c = { pay: 0, ref: 0, buyers: 0, uv: 0, cost: 0, adpay: 0 };
+  for (const d of rangeDates(start, end)) {
+    const r = getDay(d); if (!r) continue;
+    c.pay += r.pay_amount || 0; c.ref += r.refund_amount || 0; c.buyers += r.pay_buyer_cnt || 0;
+    c.uv += r.uv || 0; c.cost += r.total_cost || 0; c.adpay += r.total_pay_amount || 0;
+  }
+  c.net = c.pay - c.ref;
+  c.rrate = c.pay ? c.ref / c.pay * 100 : 0;
+  c.roi = c.cost ? c.adpay / c.cost : 0;
+  return c;
+}
+function weekDeltaHtml(cur, prev, goodUp) {
+  if (!prev) return '<span class="kpi-delta flat">—</span>';
+  const chg = (cur - prev) / prev * 100;
+  const good = goodUp ? chg >= 0 : chg <= 0;
+  const cls = Math.abs(chg) < 0.05 ? 'flat' : (good ? 'up' : 'down');
+  return `<span class="kpi-delta ${cls}">${chg >= 0 ? '↑' : '↓'}${Math.abs(chg).toFixed(1)}%</span>`;
+}
+function renderWeekly() {
+  const end = state.weekEnd || state.selDate;
+  const start = addDays(end, -6);
+  const pstart = addDays(start, -7), pend = addDays(start, -1);
+  $('weekRange').textContent = `${cnDate(start)} ~ ${cnDate(end)}`;
+  $('weekPrev').disabled = rangeDates(pstart, pend).length === 0;
+  $('weekNext').disabled = end >= sortedDates()[sortedDates().length - 1];
+  const cur = sumRange(start, end), prev = sumRange(pstart, pend);
+  const rows = [
+    ['支付金额', fmtMoneyCompact(cur.pay), weekDeltaHtml(cur.pay, prev.pay, true)],
+    ['回款金额', fmtMoneyCompact(cur.net), weekDeltaHtml(cur.net, prev.net, true)],
+    ['金额退款率', fmtPct(cur.rrate), weekDeltaHtml(cur.rrate, prev.rrate, false)],
+    ['支付买家数', fmtInt(cur.buyers), weekDeltaHtml(cur.buyers, prev.buyers, true)],
+    ['访客数', fmtInt(cur.uv), weekDeltaHtml(cur.uv, prev.uv, true)],
+    ['推广花费', fmtMoneyCompact(cur.cost), weekDeltaHtml(cur.cost, prev.cost, false)],
+    ['推广ROI', fmtRatio(cur.roi), weekDeltaHtml(cur.roi, prev.roi, true)]
+  ];
+  $('weekTable').innerHTML = `<table class="week-table"><tr><th>指标</th><th class="num">本周</th><th class="num">环比上周</th></tr>` +
+    rows.map(r => `<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join('') + '</table>';
+  const agg = {};
+  for (const d of rangeDates(start, end)) for (const r of (prodRows(d) || [])) {
+    const a = agg[r.id] || (agg[r.id] = { id: r.id, t: r.t, img: r.img || '', pay: 0, ref: 0, uv: 0, cnt: 0 });
+    a.pay += r.pay; a.ref += r.ref; a.uv += r.uv; a.cnt += r.cnt || 0;
+  }
+  const list = Object.values(agg);
+  list.forEach(x => { x.rate = x.uv ? x.cnt / x.uv * 100 : 0; });
+  $('weekTop').innerHTML = [...list].sort((a, b) => b.pay - a.pay).slice(0, 5)
+    .map(r => prodRowHtml(r, '')).join('') || '<div class="news-empty">无（商品明细保留14天）</div>';
+  $('weekBad').innerHTML = list.filter(r => r.pay > 0 && r.ref / r.pay * 100 > 30).sort((a, b) => b.ref - a.ref).slice(0, 5)
+    .map(r => prodRowHtml(r, `<span class="bad">退款率 ${(r.ref / r.pay * 100).toFixed(0)}%</span>`)).join('') || '<div class="news-empty">无 🎉</div>';
+  const anoms = [];
+  for (const d of rangeDates(start, end)) {
+    const r = getDay(d); if (!r) continue;
+    const rr = refundRateOf(r), roi = roiOf(r), pv = getDay(prevDataDate(d));
+    if (rr > 30) anoms.push(`${cnDate(d)} 退款率 ${rr.toFixed(1)}%`);
+    if (r.total_cost && roi < 3) anoms.push(`${cnDate(d)} 推广ROI ${roi.toFixed(2)}`);
+    if (pv && pv.pay_amount && (pv.pay_amount - r.pay_amount) / pv.pay_amount * 100 >= 40) anoms.push(`${cnDate(d)} 支付环比骤降`);
+  }
+  $('weekAnoms').innerHTML = anoms.map(a => `<div class="prod-row"><div class="prod-nums"><span class="bad">${a}</span></div></div>`).join('') || '<div class="news-empty">无异常 🎉</div>';
+  const recs = state.records.filter(r => r.record_date >= start && r.record_date <= end);
+  $('weekRecs').innerHTML = recs.map(r =>
+    `<div class="prod-row"><div class="prod-title">${r.record_date.slice(5)} [${escapeHtml(r.category)}]</div><div class="prod-nums" style="white-space:normal">${escapeHtml(r.content)}</div></div>`
+  ).join('') || '<div class="news-empty">本周暂无操作记录</div>';
+}
+
+/* ---------- 日期下拉日历 ---------- */
+const dpState = { y: 0, m: 0 };
+function dpRange() { const ds = sortedDates(); return { min: ds[0].slice(0, 7), max: ds[ds.length - 1].slice(0, 7) }; }
+function renderPicker() {
+  const { y, m } = dpState;
+  $('dpTitle').textContent = `${y}年${m}月`;
+  const have = new Set(sortedDates());
+  const { min, max } = dpRange();
+  const curM = `${y}-${String(m).padStart(2, '0')}`;
+  $('dpPrev').disabled = curM <= min;
+  $('dpNext').disabled = curM >= max;
+  const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  const days = new Date(y, m, 0).getDate();
+  let html = ['一','二','三','四','五','六','日'].map(w => `<div class="dp-wd">${w}</div>`).join('');
+  for (let i = 0; i < lead; i++) html += '<div class="dp-day blank"></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = dateStr(y, m, d);
+    const cls = ['dp-day'];
+    if (!have.has(ds)) cls.push('off');
+    if (ds === state.selDate) cls.push('sel');
+    html += `<div class="${cls.join(' ')}" data-date="${ds}">${d}</div>`;
+  }
+  $('dpGrid').innerHTML = html;
+}
+function openPicker(anchor) {
+  const dates = sortedDates();
+  if (!dates.length) return toast('暂无数据');
+  const cur = state.selDate && dates.includes(state.selDate) ? state.selDate : dates[dates.length - 1];
+  dpState.y = +cur.slice(0, 4); dpState.m = +cur.slice(5, 7);
+  renderPicker();
+  const pk = $('datePicker');
+  pk.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const w = pk.offsetWidth, h = pk.offsetHeight;
+  const left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+  let top = r.bottom + 8;
+  if (top + h > window.innerHeight - 8) top = r.top - h - 8;
+  top = Math.min(Math.max(8, top), Math.max(8, window.innerHeight - h - 8));
+  pk.style.left = left + 'px'; pk.style.top = top + 'px';
+}
+function closePicker() { $('datePicker').hidden = true; }
+function pickDate(ds) { state.selDate = ds; closePicker(); renderReport(); renderAds(); renderProducts(); }
+
+/* ---------- 日历 ---------- */
+function renderCalendar() {
+  const { y, m } = state.calCursor;
+  $('calTitle').textContent = `${y}年${m}月`;
+  const today = new Date(); const todayDs = dateStr(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  const days = new Date(y, m, 0).getDate();
+  const recDates = recordDates();
+  let html = ['一','二','三','四','五','六','日'].map(w => `<div class="cal-wd">周${w}</div>`).join('');
+  for (let i = 0; i < lead; i++) html += '<div class="cal-cell blank"></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = dateStr(y, m, d);
+    const day = getDay(ds);
+    const recs = recDates.has(ds) ? recordsByDate(ds).length : 0;
+    const cls = ['cal-cell'];
+    if (ds === todayDs) cls.push('today');
+    if (ds === state.selDate) cls.push('selected');
+    if (ds > todayDs) cls.push('future');
+    if (!day) cls.push('no-data');
+    const marks = [];
+    if (recs) marks.push(`<span class="mark-record"></span><span class="rec-count-tag">${recs}条记录</span>`);
+    if (day) marks.push('<span class="mark-data"></span>');
+    html += `<div class="${cls.join(' ')}" data-date="${ds}"><div class="day-num">${d}</div>${day ? `<div class="cal-amt tabnum">${fmtMoneyCompact(day.pay_amount)}</div>` : '<div class="cal-amt">无数据</div>'}<div class="cal-marks">${marks.join('')}</div></div>`;
+  }
+  $('calGrid').innerHTML = html;
+  renderCalDetail();
+}
+function effectCompare(ds) {
+  const dates = sortedDates();
+  const i = dates.indexOf(ds);
+  if (i < 0) return null;
+  const before = dates.slice(Math.max(0, i - 3), i).map(getDay).filter(Boolean);
+  const after = dates.slice(i + 1, i + 4).map(getDay).filter(Boolean);
+  const agg = (rows) => rows.length ? {
+    pay: rows.reduce((s, r) => s + (r.pay_amount || 0), 0) / rows.length,
+    conv: rows.reduce((s, r) => s + convOf(r), 0) / rows.length,
+    rrate: rows.reduce((s, r) => s + refundRateOf(r), 0) / rows.length,
+    roi: rows.reduce((s, r) => s + roiOf(r), 0) / rows.length
+  } : null;
+  return { before: agg(before), after: agg(after), nB: before.length, nA: after.length };
+}
+function effectHtml(ds) {
+  const recs = recordsByDate(ds);
+  if (!recs.length) return '';
+  const ef = effectCompare(ds);
+  if (!ef || !ef.before) return '';
+  const row = (label, b, a, fmt, goodUp) => {
+    if (a === null || a === undefined) return `<div class="effect-row"><span>${label}</span><span class="num">${fmt(b)}</span><span style="color:var(--text-lo)">—</span><span style="color:var(--text-lo)">—</span></div>`;
+    const chg = b ? (a - b) / b * 100 : 0;
+    const good = goodUp ? chg >= 0 : chg <= 0;
+    const color = Math.abs(chg) < 0.05 ? 'var(--text-lo)' : (good ? 'var(--success-text)' : 'var(--danger-text)');
+    return `<div class="effect-row"><span>${label}</span><span class="num">${fmt(b)}</span><span class="num">${fmt(a)}</span><span style="color:${color};font-weight:700">${chg >= 0 ? '↑' : '↓'}${Math.abs(chg).toFixed(1)}%</span></div>`;
+  };
+  const a = ef.after;
+  return `<div class="effect-card">
+    <div class="effect-title">📈 操作效果对比 · 操作前${ef.nB}天均值 vs 操作后${ef.nA || 0}天均值</div>
+    <div class="effect-row" style="color:var(--text-lo)"><span>指标</span><span>前</span><span>后</span><span>变化</span></div>
+    ${row('支付金额', ef.before.pay, a && a.pay, v => fmtMoneyCompact(v), true)}
+    ${row('支付转化率', ef.before.conv, a && a.conv, v => fmtPct(v), true)}
+    ${row('金额退款率', ef.before.rrate, a && a.rrate, v => fmtPct(v), false)}
+    ${row('推广ROI', ef.before.roi, a && a.roi, v => fmtRatio(v), true)}
+    ${ef.nA === 0 ? '<div class="effect-note">操作后暂无数据，过几天再来看效果</div>' : ef.nA < 3 ? `<div class="effect-note">操作后仅${ef.nA}天数据，结论待稳定</div>` : ''}
+  </div>`;
+}
+function renderCalDetail() {
+  const ds = state.selDate;
+  const day = getDay(ds);
+  const recs = recordsByDate(ds);
+  let html = `<div class="cal-detail-date">${cnDate(ds)} · ${weekdayOf(ds)}</div>`;
+  if (day) {
+    html += `<div class="mini-kpis">
+      <div class="mini-kpi"><div class="l">支付金额</div><div class="v tabnum">${fmtMoney(day.pay_amount)}</div></div>
+      <div class="mini-kpi"><div class="l">访客数</div><div class="v tabnum">${fmtInt(day.uv)}</div></div>
+      <div class="mini-kpi"><div class="l">支付转化率</div><div class="v tabnum">${fmtPct(convOf(day))}</div></div>
+      <div class="mini-kpi"><div class="l">推广ROI</div><div class="v tabnum">${fmtRatio(roiOf(day))}</div></div>
+      <div class="mini-kpi"><div class="l">金额退款率</div><div class="v tabnum">${fmtPct(refundRateOf(day))}</div></div>
+      <div class="mini-kpi"><div class="l">加购件数</div><div class="v tabnum">${fmtInt(day.cart_cnt || 0)}</div></div>
+    </div>`;
+    if ((state.data.dashboards || []).includes(ds)) html += `<a class="btn btn-primary" style="margin-bottom:12px" target="_blank" rel="noopener" href="dashboards/${ds}.html">📈 打开完整看板</a>`;
+  } else html += '<div class="cal-empty">这一天没有经营数据</div>';
+  html += effectHtml(ds);
+  html += '<div class="section-title" style="margin-top:4px">📝 当日操作记录</div>';
+  html += recs.length ? '<div class="cal-rec-list">' + recs.map(r => `<div class="rec-card glass" style="margin:0"><span class="cat-chip cat-${r.category}">${r.category}</span><div class="rec-body"><div class="rec-content">${escapeHtml(r.content)}</div></div></div>`).join('') + '</div>' : '<div class="cal-empty">暂无记录，下面记一笔吧</div>';
+  html += `<div class="quick-add"><select id="calRecCat">${CATEGORIES.map(c => `<option>${c}</option>`).join('')}</select><textarea id="calRecContent" placeholder="这一天做了什么操作？"></textarea><button class="btn btn-primary" id="calRecSubmit">添加记录</button></div>`;
+  $('calDetail').innerHTML = html;
+  $('calRecSubmit').onclick = async () => {
+    const content = $('calRecContent').value.trim();
+    if (!content) return toast('请先填写内容');
+    await addRecord(ds, $('calRecCat').value, content);
+  };
+}
+
+/* ---------- 记录 ---------- */
+function renderRecords() {
+  const groups = {};
+  for (const r of state.records) (groups[r.record_date] ||= []).push(r);
+  const dates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+  if (!dates.length) { $('recGroups').innerHTML = '<div class="glass card" style="text-align:center;color:var(--text-lo);padding:36px">还没有操作记录，从上面添加第一条吧 ✍️</div>'; return; }
+  $('recGroups').innerHTML = dates.map(ds => {
+    const day = getDay(ds);
+    const sub = day ? `当日支付 ${fmtMoney(day.pay_amount)} · 访客 ${fmtInt(day.uv)}` : '无经营数据';
+    const cards = groups[ds].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).map(r => `
+      <div class="rec-card glass" data-id="${r.id}">
+        <span class="cat-chip cat-${r.category}">${r.category}</span>
+        <div class="rec-body"><div class="rec-content">${escapeHtml(r.content)}</div><div class="rec-time">${r.created_at ? new Date(r.created_at).toLocaleString('zh-CN', { hour12: false }) : ''}</div></div>
+        <div class="rec-actions"><button class="icon-btn rec-edit" title="编辑">✏️</button><button class="icon-btn rec-del" title="删除">🗑</button></div>
+      </div>`).join('');
+    return `<div class="rec-group"><div class="rec-group-head"><span class="rec-date">${cnDate(ds)} · ${weekdayOf(ds)}</span><span class="rec-group-sub">${sub} · ${groups[ds].length} 条记录</span></div>${cards}</div>`;
+  }).join('');
+  $('recGroups').querySelectorAll('.rec-del').forEach(btn => {
+    btn.onclick = async () => {
+      const id = Number(btn.closest('.rec-card').dataset.id);
+      if (!confirm('确定删除这条记录吗？')) return;
+      const res = await api(`/api/records?id=${id}`, { method: 'DELETE' });
+      if (res.ok) { state.records = state.records.filter(r => r.id !== id); refreshRecordViews(); toast('已删除'); }
+      else toast('删除失败：' + (res.error || ''));
+    };
+  });
+  $('recGroups').querySelectorAll('.rec-edit').forEach(btn => {
+    btn.onclick = () => {
+      const card = btn.closest('.rec-card');
+      const id = Number(card.dataset.id);
+      const rec = state.records.find(r => r.id === id);
+      if (!rec) return;
+      card.querySelector('.rec-body').innerHTML = `<div class="rec-edit-area"><textarea id="edit-${id}">${escapeHtml(rec.content)}</textarea><div class="rec-edit-row"><select id="editcat-${id}">${CATEGORIES.map(c => `<option ${c === rec.category ? 'selected' : ''}>${c}</option>`).join('')}</select><button class="btn btn-primary" id="save-${id}">保存</button><button class="btn" id="cancel-${id}">取消</button></div></div>`;
+      $(`cancel-${id}`).onclick = () => renderRecords();
+      $(`save-${id}`).onclick = async () => {
+        const content = $(`edit-${id}`).value.trim();
+        if (!content) return toast('内容不能为空');
+        const res = await api(`/api/records?id=${id}`, { method: 'PATCH', body: JSON.stringify({ content, category: $(`editcat-${id}`).value }) });
+        if (res.ok) { Object.assign(rec, res.record); refreshRecordViews(); toast('已保存'); }
+        else toast('保存失败：' + (res.error || ''));
+      };
+    };
+  });
+}
+function refreshRecordViews() {
+  const badge = $('recordCount');
+  badge.hidden = !state.records.length;
+  badge.textContent = state.records.length;
+  renderRecords();
+  if (state.view === 'calendar') renderCalendar();
+}
+
+/* ---------- 行业情报 ---------- */
+function renderIntel() {
+  const intel = state.data.ai_intel;
+  if (!intel) { $('intelBody').innerHTML = '<div class="news-empty">今日 AI 情报尚未生成（每日 10:00 自动更新）</div>'; $('intelDate').textContent = 'AI 每日情报'; $('intelUpd').textContent = ''; return; }
+  $('intelDate').textContent = `AI 每日情报 · ${intel.date || ''} ${intel.weekday || ''}`;
+  $('intelUpd').textContent = intel._file_mtime ? `更新于 ${intel._file_mtime}` : '';
+  const item = (it, i) => {
+    const title = typeof it === 'string' ? it : it.title;
+    const body = typeof it === 'string' ? '' : (it.content || '');
+    return body ? `<details class="intel-item"><summary><span class="idx">${i + 1}</span>${escapeHtml(title)}</summary><div class="body">${escapeHtml(body)}</div></details>`
+      : `<div class="intel-item plain"><summary><span class="idx">${i + 1}</span>${escapeHtml(title)}</summary></div>`;
+  };
+  let html = '';
+  if (intel.headlines && intel.headlines.length) { html += '<div class="intel-sec">🔥 头条深度</div>' + intel.headlines.map(item).join(''); }
+  if (intel.important && intel.important.length) { html += '<div class="intel-sec">📌 重要动态</div>' + intel.important.map(item).join(''); }
+  if (intel.briefs && intel.briefs.length) { html += '<div class="intel-sec">⚡ 快讯</div>' + intel.briefs.map((b, i) => `<div class="intel-item plain"><summary><span class="idx">${i + 1}</span>${escapeHtml(typeof b === 'string' ? b : b.title)}</summary></div>`).join(''); }
+  if (intel.tip) { html += `<div class="intel-sec">🛒 电商人今日关注</div><div class="tip-card">${escapeHtml(typeof intel.tip === 'string' ? intel.tip : intel.tip.content || intel.tip.title || '')}</div>`; }
+  $('intelBody').innerHTML = html || '<div class="news-empty">暂无情报内容</div>';
+}
+function newsListHtml(items, ai) {
+  if (!items || !items.length) return '<div class="news-empty">暂无内容</div>';
+  return items.map(n => `<a class="news-item" href="${escapeHtml(n.link)}" target="_blank" rel="noopener">${escapeHtml(n.title)}<div class="meta"><span class="src-chip ${ai ? 'ai' : ''}">${escapeHtml(n.source)}</span><span>${relTime(n.time)}</span></div></a>`).join('');
+}
+async function loadNews(force) {
+  const res = await api(`/api/news${force ? '?refresh=1' : ''}`);
+  const digest = state.data.news_digest || null;
+  const curated = (items, ai) => (items || []).map(n => `<a class="news-item" ${n.link ? `href="${escapeHtml(n.link)}" target="_blank" rel="noopener"` : 'style="cursor:default"'}>${escapeHtml(n.title)}${n.summary ? `<div style="font-size:11px;color:var(--text-lo);margin-top:3px;line-height:1.6">${escapeHtml(n.summary)}</div>` : ''}<div class="meta"><span class="src-chip ${ai ? 'ai' : ''}">精选</span>${n.source ? `<span>${escapeHtml(n.source)}</span>` : ''}</div></a>`).join('');
+  if (!res.ok) {
+    const e = digest && digest.ecom ? curated(digest.ecom, false) || '<div class="news-empty">暂无内容</div>' : '<div class="news-empty">暂无内容</div>';
+    const a = digest && digest.ai ? curated(digest.ai, true) : '<div class="news-empty">暂无内容</div>';
+    $('newsEcom').innerHTML = e; $('newsAi').innerHTML = a;
+    $('newsBiz').innerHTML = '<div class="news-empty">新闻源暂不可用</div>';
+    return;
+  }
+  $('newsEcom').innerHTML = (curated(digest && digest.ecom, false) + newsListHtml(res.ecom, false)) || '<div class="news-empty">暂无内容</div>';
+  $('newsBiz').innerHTML = newsListHtml(res.bizHot, false);
+  $('newsAi').innerHTML = (curated(digest && digest.ai, true) + newsListHtml(res.ai, true)) || '<div class="news-empty">暂无内容</div>';
+  const parts = [];
+  if (res.fetched_at) parts.push(`RSS ${res.cached ? '缓存' : '更新'}于 ${relTime(res.fetched_at)}`);
+  if (digest && digest.compiled_at) parts.push(`精选 ${relTime(digest.compiled_at)}`);
+  $('newsUpd').textContent = parts.join(' · ');
+  state.newsLoaded = true;
+}
+
+/* ---------- API ---------- */
+const LOCAL_REC_KEY = 'mff_records_v1';
+function loadLocalRecords() { try { return JSON.parse(localStorage.getItem(LOCAL_REC_KEY) || '[]'); } catch (e) { return []; } }
+function saveLocalRecords(r) { try { localStorage.setItem(LOCAL_REC_KEY, JSON.stringify(r)); } catch (e) {} }
+// 静态发布（妙搭）没有后端，/api/records 降级为浏览器本地存储
+function localRecordApi(path, opts = {}) {
+  const all = loadLocalRecords();
+  const idm = path.match(/[?&]id=(\d+)/);
+  const method = (opts.method || 'GET').toUpperCase();
+  let body = {}; try { body = JSON.parse(opts.body || '{}'); } catch (e) {}
+  if (method === 'GET') return { ok: true, records: all, local: true };
+  if (method === 'POST') {
+    const rec = { id: Date.now(), record_date: body.record_date, category: body.category, content: body.content, created_at: new Date().toISOString() };
+    all.push(rec); saveLocalRecords(all); return { ok: true, record: rec };
+  }
+  if (method === 'PATCH' && idm) {
+    const rec = all.find(r => String(r.id) === idm[1]);
+    if (rec) Object.assign(rec, { content: body.content, category: body.category });
+    saveLocalRecords(all); return { ok: true, record: rec };
+  }
+  if (method === 'DELETE' && idm) {
+    saveLocalRecords(all.filter(r => String(r.id) !== idm[1])); return { ok: true };
+  }
+  return { ok: false, error: 'local storage unsupported' };
+}
+async function api(path, opts = {}) {
+  try {
+    const resp = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  } catch (e) {
+    if (path.startsWith('/api/records')) return localRecordApi(path, opts);
+    return { ok: false, error: e.message };
+  }
+}
+async function addRecord(ds, category, content) {
+  const res = await api('/api/records', { method: 'POST', body: JSON.stringify({ record_date: ds, category, content }) });
+  if (res.ok) { state.records.push(res.record); refreshRecordViews(); toast('记录已添加'); return true; }
+  toast('添加失败：' + (res.error || ''));
+  return false;
+}
+
+/* ---------- 视图切换 ---------- */
+function switchView(view) {
+  state.view = view;
+  document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  ['report','ads','products','reviews','calendar','records','news','weekly'].forEach(v => { $('view-' + v).hidden = v !== view; });
+  if (view === 'report') { renderReport(); Object.values(state.charts).forEach(c => c.resize()); }
+  if (view === 'ads') renderAds();
+  if (view === 'products') { renderProducts(); Object.values(state.charts).forEach(c => c.resize()); }
+  if (view === 'reviews') renderReviews();
+  if (view === 'weekly') renderWeekly();
+  if (view === 'calendar') renderCalendar();
+  if (view === 'records') renderRecords();
+  if (view === 'news') { renderIntel(); if (!state.newsLoaded) loadNews(false); }
+}
+
+/* ---------- 初始化 ---------- */
+async function init() {
+  const [dataResp, metaResp, recResp] = await Promise.all([
+    fetch('data.json').then(r => r.json()),
+    api('/api/meta'),
+    api('/api/records')
+  ]);
+  state.data = dataResp;
+  state.snapshotAt = dataResp.snapshot_at || dataResp.updated_at || '';
+  state.storage = metaResp.storage || 'memory';
+  state.records = recResp.records || [];
+  state.selDate = dataResp.dates[dataResp.dates.length - 1];
+  const p = state.selDate.split('-');
+  state.calCursor = { y: +p[0], m: +p[1] };
+  $('dataThrough').textContent = dataResp.data_through || state.selDate;
+  const sb = $('storageBadge');
+  if (state.storage === 'supabase') $('storageText').textContent = '云端同步';
+  else { sb.classList.add('memory'); $('storageText').textContent = '本地预览模式'; }
+  const today = new Date();
+  $('recDate').value = dateStr(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  document.querySelectorAll('.nav-item[data-view]').forEach(b => b.onclick = () => switchView(b.dataset.view));
+  const step = (dir) => { const i = sortedDates().indexOf(state.selDate); const ni = i + dir; if (ni >= 0 && ni < sortedDates().length) { state.selDate = sortedDates()[ni]; renderReport(); renderAds(); renderProducts(); } };
+  $('prevDay').onclick = () => step(-1);
+  $('nextDay').onclick = () => step(1);
+  $('adsPrevDay').onclick = () => step(-1);
+  $('adsNextDay').onclick = () => step(1);
+  $('prodPrevDay').onclick = () => step(-1);
+  $('prodNextDay').onclick = () => step(1);
+  $('weekPrev').onclick = () => { state.weekEnd = addDays(state.weekEnd || state.selDate, -7); renderWeekly(); };
+  $('weekNext').onclick = () => { state.weekEnd = addDays(state.weekEnd || state.selDate, 7); renderWeekly(); };
+  ['reportDatePick', 'adsDatePick', 'productsDatePick'].forEach(id => $(id).addEventListener('click', (e) => { e.stopPropagation(); openPicker($(id)); }));
+  $('dpPrev').addEventListener('click', (e) => { e.stopPropagation(); dpState.m--; if (dpState.m < 1) { dpState.m = 12; dpState.y--; } renderPicker(); });
+  $('dpNext').addEventListener('click', (e) => { e.stopPropagation(); dpState.m++; if (dpState.m > 12) { dpState.m = 1; dpState.y++; } renderPicker(); });
+  $('dpGrid').addEventListener('click', (e) => { const c = e.target.closest('.dp-day[data-date]'); if (!c || c.classList.contains('off')) return; e.stopPropagation(); pickDate(c.dataset.date); });
+  $('datePicker').addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => { if (!$('datePicker').hidden) closePicker(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePicker(); });
+  $('recordThisDay').onclick = () => { $('recDate').value = state.selDate; switchView('records'); $('recContent').focus(); };
+  $('prevMonth').onclick = () => { let { y, m } = state.calCursor; m--; if (m < 1) { m = 12; y--; } state.calCursor = { y, m }; renderCalendar(); };
+  $('nextMonth').onclick = () => { let { y, m } = state.calCursor; m++; if (m > 12) { m = 1; y++; } state.calCursor = { y, m }; renderCalendar(); };
+  $('calToday').onclick = () => { const t = new Date(); state.calCursor = { y: t.getFullYear(), m: t.getMonth() + 1 }; state.selDate = dateStr(t.getFullYear(), t.getMonth() + 1, t.getDate()); renderCalendar(); };
+  $('calGrid').addEventListener('click', (e) => { const cell = e.target.closest('.cal-cell[data-date]'); if (!cell) return; state.selDate = cell.dataset.date; renderCalendar(); });
+  $('recSubmit').onclick = async () => {
+    const ds = $('recDate').value, cat = $('recCategory').value, content = $('recContent').value.trim();
+    if (!ds) return toast('请选择日期');
+    if (!content) return toast('请填写内容');
+    if (await addRecord(ds, cat, content)) $('recContent').value = '';
+  };
+  $('newsRefresh').onclick = () => { toast('正在刷新新闻…'); loadNews(true); };
+  refreshRecordViews();
+  switchView('report');
+}
+/* ---------- 数据自动刷新轮询 ---------- */
+function rerenderCurrent() {
+  if (state.view === 'report') renderReport();
+  if (state.view === 'ads') renderAds();
+  if (state.view === 'products') renderProducts();
+  if (state.view === 'reviews') renderReviews();
+  if (state.view === 'calendar') renderCalendar();
+  if (state.view === 'records') renderRecords();
+  if (state.view === 'weekly') renderWeekly();
+  if (state.view === 'news') renderIntel();
+}
+async function pollData() {
+  try {
+    const d = await fetch('data.json').then(r => r.json());
+    const sig = d.snapshot_at || d.updated_at || '';
+    if (sig && sig !== state.snapshotAt) {
+      state.snapshotAt = sig;
+      state.data = d;
+      $('dataThrough').textContent = d.data_through || '';
+      rerenderCurrent();
+      toast('📡 数据已更新至 ' + (d.data_through || '最新'));
+    }
+  } catch (e) { /* 网络失败静默 */ }
+}
+setInterval(pollData, 5 * 60 * 1000);
+init();
+</script>
+</body>
+</html>
