@@ -1286,7 +1286,7 @@ function switchView(view) {
 /* ---------- 初始化 ---------- */
 async function init() {
   const [dataResp, metaResp, recResp] = await Promise.all([
-    fetch('data.json').then(r => r.json()),
+    fetch('data.json?cb=' + Date.now(), {cache:'no-store'}).then(r => r.json()),
     api('/api/meta'),
     api('/api/records')
   ]);
@@ -1348,7 +1348,7 @@ function rerenderCurrent() {
 }
 async function pollData() {
   try {
-    const d = await fetch('data.json').then(r => r.json());
+    const d = await fetch('data.json?cb=' + Date.now(), {cache:'no-store'}).then(r => r.json());
     const sig = d.snapshot_at || d.updated_at || '';
     if (sig && sig !== state.snapshotAt) {
       state.snapshotAt = sig;
